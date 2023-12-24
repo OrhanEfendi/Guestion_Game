@@ -1,3 +1,8 @@
+const qTitle = document.querySelector("#qTitle");
+const btnGroup = document.querySelector("#btnGroup");
+const progresLine = document.querySelector("#progresLine");
+const point = document.querySelector("#point");
+const title = document.querySelector("#title");
 const questions = [
   {
     question:
@@ -60,78 +65,92 @@ const questions = [
   },
 ];
 
-class QuestionGame {
+class Game {
   points = 0;
-  nextQindex = -1;
-  currentQuestion = [];
+  nextQues = 0;
   qData = [];
+  currentData = null;
 
   constructor(data) {
     this.qData = data;
   }
 
-  nextQuestion() {
-    if (this.nextQindex == this.qData.length - 1) {
-      console.log("Oyun Bitdi");
+  nextQuestions() {
+    if (this.nextQues >= this.qData.length) {
+      this.restart();
     } else {
-      this.nextQindex += 1;
-      const questionItem = this.qData[this.nextQindex];
-      this.currentQuestion = questionItem;
-      return questionItem;
+      const question = this.qData[this.nextQues];
+      this.nextQues += 1;
+
+      this.currentData = question;
+      return question;
+    }
+  }
+
+  restart() {
+    this.nextQues = 0;
+    this.points = 0;
+    point.innerHTML = this.points;
+    progresLine.style.width = "0%";
+    this.currentData = null;
+    this.startGame();
+  }
+
+  startGame() {
+    let questions = this.nextQuestions();
+
+    if (questions) {
+      qTitle.innerHTML = questions.question;
+
+      btnGroup.innerHTML = questions.variants
+        .map(
+          (item) =>
+            `<button class="btn btn-outline-light" value='${item}'>${item}</button>`
+        )
+        .join("");
+    } else {
+      console.log("Oyun bitti");
     }
   }
 }
 
-const Mygame = new QuestionGame(questions);
+const Mygame = new Game(questions);
 
-const qTitle = document.querySelector("#qTitle");
-const btnGroup = document.querySelector("#btnGroup");
-const progresLine = document.querySelector("#progresLine");
-const point = document.querySelector("#point");
-function StartGame() {
-  Mygame.nextQuestion();
-  qTitle.innerHTML = Mygame.currentQuestion.question;
-  btnGroup.innerHTML = Mygame.currentQuestion.variants.map(
-    (item) =>
-      `<button class="btn btn-outline-light" value='${item}'  onclick="selectItem('${item}')">${item}</button>`
+Mygame.startGame();
+
+function selectItem(e) {
+  if (e.target.tagName !== "BUTTON") {
+    return;
+  }
+
+  let button_tag = e.target;
+  let correct_variant = Mygame.currentData.trueanswers;
+  progresLine.style.width = `${(Mygame.nextQues + 1) * 10}%`;
+  let correctButton = document.querySelector(
+    `button[value="${correct_variant}"]`
   );
-}
 
-StartGame();
-function selectItem(userChoose) {
-  console.log(Mygame.currentQuestion);
-  console.log(userChoose);
-
-  if (userChoose == Mygame.currentQuestion.trueanswers) {
-    console.log("duz tapdi");
+  if (button_tag.value == correct_variant) {
     Mygame.points += 10;
     point.innerHTML = Mygame.points;
+    button_tag.style.backgroundColor = "green";
+    title.style.backgroundColor = "green";
+    setTimeout(() => {
+      button_tag.style.background = "";
+      title.style.backgroundColor = "rgb(243, 216, 66)";
+      Mygame.startGame();
+    }, 200);
   } else {
-    console.log("sehf tapdi");
+    button_tag.style.backgroundColor = "red";
+    title.style.backgroundColor = "red";
+    correctButton.style.backgroundColor = "green";
+    setTimeout(() => {
+      button_tag.style.background = "";
+      correctButton.style.backgroundColor = "";
+      title.style.backgroundColor = "rgb(243, 216, 66)";
+      Mygame.startGame();
+    }, 200);
   }
-  progresLine.style.width = `${(Mygame.nextQindex + 1) * 10}%`;
-  btnGroup.addEventListener("click", function (e) {
-    const clickedElement = e.target;
-
-    // Eğer tıklanan öğe bir button ise işlem yap
-    if (clickedElement.tagName === "BUTTON") {
-      if (clickedElement.value == Mygame.currentQuestion.trueanswers) {
-        const buttonValue = clickedElement.value;
-        console.log(buttonValue);
-        clickedElement.style.background = "green";
-        setTimeout(() => {
-          // Bekleme süresi bittikten sonra arka plan rengini temizle ve bir sonraki soruya geç
-          clickedElement.style.background = "";
-          StartGame();
-        }, 200);
-      } else {
-        clickedElement.style.background = "red";
-        setTimeout(() => {
-          // Bekleme süresi bittikten sonra arka plan rengini temizle ve bir sonraki soruya geç
-          clickedElement.style.background = "";
-          StartGame();
-        }, 200);
-      }
-    }
-  });
 }
+
+btnGroup.addEventListener("click", selectItem);
